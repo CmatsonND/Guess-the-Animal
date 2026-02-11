@@ -7,52 +7,51 @@
   style.css
 </head>
 <body>
-  <main class="container">
+  <main class="container" role="main">
     <header>
       <h1>Animal Guessing Game</h1>
-      <p>Ask yes/no questions to figure out the animal. Try things like:
-        <em>“Is it a mammal?”</em>, <em>“Can it fly?”</em>, <em>“Does it have 4 legs?”</em>.
+      <p>
+        Ask <strong>yes/no</strong> questions to figure out the animal.<br />
+        Try: <em>“Is it a mammal?”</em>, <em>“Can it fly?”</em>, <em>“Does it have four legs?”</em>.
       </p>
     </header>
 
-    <section class="controls">
+    <section class="controls" aria-label="Game controls">
       <div class="row">
-        <input id="questionInput" type="text" placeholder="Ask a question (e.g., 'Is it a mammal?')" />
+        <input id="questionInput" type="text" placeholder="Ask a question (e.g., 'Is it a mammal?')" aria-label="Question input" />
         <button id="askBtn" aria-label="Ask Question">Ask</button>
       </div>
       <div class="row">
-        <input id="guessInput" type="text" placeholder="Guess the animal (e.g., 'cow')" />
+        <input id="guessInput" type="text" placeholder="Guess the animal (e.g., 'cow')" aria-label="Guess input" />
         <button id="guessBtn" aria-label="Make Guess">Guess</button>
       </div>
       <div class="row buttons">
-        <button id="hintBtn">Hint (2 max)</button>
-        <button id="giveUpBtn" class="danger">Give Up</button>
-        <button id="newGameBtn" class="secondary">New Game</button>
+        <button id="hintBtn" aria-label="Get hint">Hint (2 max)</button>
+        <button id="giveUpBtn" class="danger" aria-label="Give up">Give Up</button>
+        <button id="newGameBtn" class="secondary" aria-label="New game">New Game</button>
       </div>
     </section>
 
-    <section class="status">
+    <section class="status" aria-label="Status">
       <div class="stats">
         <span id="hintCount">Hints used: 0/2</span>
         <span id="score">Wins: 0 • Losses: 0</span>
       </div>
-      <div id="emojiPanel" class="emoji-panel" aria-hidden="true">❓</div>
+      <div id="emojiPanel" class="emoji-panel" aria-hidden="true" title="Reveal emoji">❓</div>
     </section>
 
-    <section class="log">
-      <ul id="logList" class="log-list" aria-live="polite"></ul>
+    <section class="log" aria-label="Conversation log">
+      <ul id="logList" class="log-list" aria-live="polite" aria-relevant="additions"></ul>
     </section>
 
     <footer>
       <details>
         <summary>What can I ask?</summary>
         <ul>
-          <li>Category: mammal, bird, fish, insect, amphibian, reptile</li>
+          <li>Category: mammal, bird, fish, insect, amphibian, reptile, arachnid, crustacean, mollusk, dinosaur</li>
           <li>Abilities: fly, swim</li>
-          <li>Body: fur, feathers, scales, lays eggs, legs (e.g., “Does it have 4 legs?”)</li>
-          <li>Lifestyle: domesticated, habitat (farm, forest, ocean, desert, wetlands)</li>
-          <li>Diet: carnivore, herbivore, omnivore</li>
-          <li>Size: small, medium, large</li>
+          <li>Body: fur, feathers, scales, lays eggs, legs (e.g., “Does it have four legs?” or “4 legs”)</li>
+          <li>Lifestyle: domesticated</li>
           <li>Direct guess: “Is it a cow?” or use the Guess box</li>
         </ul>
       </details>
