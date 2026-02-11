@@ -21,10 +21,22 @@
         <input id="questionInput" type="text" placeholder="Ask a question (e.g., 'Is it a mammal?')" aria-label="Question input" />
         <button id="askBtn" aria-label="Ask Question">Ask</button>
       </div>
+
       <div class="row">
-        <input id="guessInput" type="text" placeholder="Guess the animal (e.g., 'cow')" aria-label="Guess input" />
+        <!-- Autocomplete wrapper -->
+        <div class="autocomplete-wrap">
+          <input
+            id="guessInput"
+            type="text"
+            placeholder="Guess the animal (e.g., 'cow')"
+            aria-label="Guess input"
+            autocomplete="off"
+          />
+          <ul id="guessSuggestions" class="autocomplete-list" role="listbox" aria-label="Suggestions"></ul>
+        </div>
         <button id="guessBtn" aria-label="Make Guess">Guess</button>
       </div>
+
       <div class="row buttons">
         <button id="hintBtn" aria-label="Get hint">Hint (2 max)</button>
         <button id="giveUpBtn" class="danger" aria-label="Give up">Give Up</button>
