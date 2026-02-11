@@ -1,4 +1,4 @@
-// Animal Guessing Game — loads animals.txt, infers attributes, answers yes/no questions
+// Animal Guessing Game — loads animals.txt, infers attributes, answers yes/no questions, with autocomplete for Guess
 (() => {
   /** ---------------------------------------
    * Helpers
@@ -226,15 +226,14 @@
       }
       EXTRA = built;
       logSystem(`Loaded ${EXTRA.length} animals from animals.txt`);
+      // Refresh autocomplete source after load
+      rebuildSuggestionSource();
     } catch (e) {
       logSystem(`Could not load animals.txt: ${e.message}`);
     }
   }
 
-  function allAnimals() {
-    return BASE.concat(EXTRA);
-  }
-
+  function allAnimals() { return BASE.concat(EXTRA); }
   function pickRandom() {
     const list = allAnimals();
     return list[Math.floor(Math.random() * list.length)];
@@ -425,6 +424,143 @@
   }
 
   /** ---------------------------------------
+   * Autocomplete for Guess input
+   * --------------------------------------- */
+  let suggestionSource = [];       // array of strings (animal names)
+  let suggestionOpen = false;
+  let suggestionIndex = -1;        // active (highlighted) item index
+
+  function rebuildSuggestionSource() {
+    // Build unique list of names from all animals
+    const names = allAnimals().map(a => a.name);
+    const uniq = Array.from(new Set(names));
+    // Sort alphabetically
+    suggestionSource = uniq.sort((a, b) => a.localeCompare(b));
+  }
+
+  function computeSuggestions(query, limit = 10) {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    // Prioritize startsWith, then includes
+    const starts = [];
+    const contains = [];
+    for (const name of suggestionSource) {
+      const t = name.toLowerCase();
+      if (t.startsWith(q)) starts.push(name);
+      else if (t.includes(q)) contains.push(name);
+      if (starts.length >= limit) break;
+    }
+    const combined = starts.concat(contains.filter(n => !starts.includes(n)));
+    return combined.slice(0, limit);
+  }
+
+  function renderSuggestions(items) {
+    const ul = el.guessSuggestions;
+    ul.innerHTML = "";
+    suggestionIndex = -1;
+
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "autocomplete-empty";
+      li.textContent = "No matches";
+      ul.appendChild(li);
+      ul.classList.add("show");
+      suggestionOpen = true;
+      return;
+    }
+
+    items.forEach((name, idx) => {
+      const li = document.createElement("li");
+      li.className = "autocomplete-item";
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      li.textContent = name;
+      li.addEventListener("mousedown", (e) => {
+        // Use mousedown to select before input blur
+        e.preventDefault();
+        chooseSuggestion(name);
+      });
+      ul.appendChild(li);
+    });
+
+    ul.classList.add("show");
+    suggestionOpen = true;
+  }
+
+  function closeSuggestions() {
+    el.guessSuggestions.classList.remove("show");
+    el.guessSuggestions.innerHTML = "";
+    suggestionOpen = false;
+    suggestionIndex = -1;
+  }
+
+  function highlightIndex(index) {
+    const items = Array.from(el.guessSuggestions.querySelectorAll(".autocomplete-item"));
+    items.forEach((li, i) => {
+      li.classList.toggle("active", i === index);
+      li.setAttribute("aria-selected", i === index ? "true" : "false");
+    });
+  }
+
+  function chooseSuggestion(name) {
+    el.guessInput.value = name;
+    closeSuggestions();
+    // Convenience: trigger the guess
+    el.guessBtn.click();
+  }
+
+  function onGuessInputChange() {
+    const q = el.guessInput.value;
+    if (!q.trim()) {
+      closeSuggestions();
+      return;
+    }
+    const items = computeSuggestions(q);
+    renderSuggestions(items);
+  }
+
+  function onGuessInputKeydown(e) {
+    const items = Array.from(el.guessSuggestions.querySelectorAll(".autocomplete-item"));
+
+    if (e.key === "ArrowDown") {
+      if (!suggestionOpen) {
+        onGuessInputChange();
+      } else {
+        suggestionIndex = Math.min(suggestionIndex + 1, items.length - 1);
+        highlightIndex(suggestionIndex);
+      }
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (suggestionOpen) {
+        suggestionIndex = Math.max(suggestionIndex - 1, 0);
+        highlightIndex(suggestionIndex);
+      }
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === "Enter") {
+      if (suggestionOpen && suggestionIndex >= 0 && items[suggestionIndex]) {
+        chooseSuggestion(items[suggestionIndex].textContent);
+        e.preventDefault();
+        return;
+      }
+      // Otherwise, proceed to normal Guess
+      // (the guess input keydown handler already triggers the Guess button)
+      return;
+    }
+
+    if (e.key === "Escape") {
+      closeSuggestions();
+      e.preventDefault();
+      return;
+    }
+  }
+
+  /** ---------------------------------------
    * DOM & Events (DOMContentLoaded ensures buttons work)
    * --------------------------------------- */
   document.addEventListener("DOMContentLoaded", () => {
@@ -441,16 +577,17 @@
       score: document.getElementById("score"),
       logList: document.getElementById("logList"),
       emojiPanel: document.getElementById("emojiPanel"),
+      guessSuggestions: document.getElementById("guessSuggestions"),
     };
 
     // Defensive check
-    if (!el.askBtn || !el.questionInput) {
+    if (!el.askBtn || !el.questionInput || !el.guessInput || !el.guessBtn || !el.guessSuggestions) {
       console.error("UI elements not found: check IDs in index.html");
-      alert("UI error: Ask button or question input not found. Check IDs in index.html.");
+      alert("UI error: Missing elements. Check IDs in index.html.");
       return;
     }
 
-    // Attach listeners
+    // Attach listeners - Ask
     el.askBtn.addEventListener("click", () => {
       if (gameOver) return;
       const q = el.questionInput.value.trim();
@@ -469,18 +606,31 @@
       if (e.key === "Enter") el.askBtn.click();
     });
 
+    // Attach listeners - Guess
     el.guessBtn.addEventListener("click", () => {
       if (gameOver) return;
       const guess = el.guessInput.value.trim();
       if (!guess) return;
       el.guessInput.value = "";
+      closeSuggestions();
       handleGuess(guess);
     });
 
+    el.guessInput.addEventListener("input", onGuessInputChange);
     el.guessInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") el.guessBtn.click();
+      onGuessInputKeydown(e);
+      if (e.key === "Enter" && !suggestionOpen) {
+        // Enter without open suggestions -> normal guess
+        el.guessBtn.click();
+      }
     });
 
+    // Close suggestions when input loses focus (but allow clicks on list)
+    el.guessInput.addEventListener("blur", () => {
+      setTimeout(() => closeSuggestions(), 120);
+    });
+
+    // Hint / Give Up / New Game
     el.hintBtn.addEventListener("click", () => {
       if (gameOver) return;
       if (hintsUsed >= MAX_HINTS) {
@@ -515,10 +665,10 @@
       }
     }
 
-    // Init: load list, then start
+    // Init: build suggestion source from BASE first, then load EXTRA
+    rebuildSuggestionSource();
     updateScore();
     loadAnimalsTxt().finally(() => {
       newGame();
     });
   });
-})();
